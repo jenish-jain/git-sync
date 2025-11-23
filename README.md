@@ -2,6 +2,14 @@
 
 Automatically sync your GitHub repositories to your Raspberry Pi as a local Git server with log rotation and automatic cleanup.
 
+## 🚀 One-Line Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jenish-jain/git-sync/main/install.sh | bash
+```
+
+This will download and set up everything automatically! Or follow the manual installation steps below.
+
 ## Features
 
 - ✅ **Automatic bidirectional sync** between GitHub and your Raspberry Pi
