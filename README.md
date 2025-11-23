@@ -264,12 +264,6 @@ bash generate-git-sync-project.sh
 
 This creates `~/sync-repos.json` with all your GitHub repos (excludes forks and archived).
 
-## Support
-
-- **GitHub Repository**: https://github.com/jenishjain/git-sync
-- **Issues/Bugs**: https://github.com/jenishjain/git-sync/issues
-- **GitHub Tokens**: https://github.com/settings/tokens
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -281,7 +275,7 @@ MIT License - Free to use, modify, and distribute.
 ## Author
 
 **Jenish Jain**
-- GitHub: [@jenishjain](https://github.com/jenishjain)
+- GitHub: [@jenish-jain](https://github.com/jenish-jain)
 
 ---
 

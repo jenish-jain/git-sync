@@ -96,7 +96,7 @@ cat > systemd/git-sync.service << 'SERVICEEOF'
 Description=Git Repository Sync Service
 After=network-online.target
 Wants=network-online.target
-Documentation=https://github.com/jenishjain/git-sync
+Documentation=https://github.com/jenish-jain/git-sync
 
 [Service]
 Type=oneshot
