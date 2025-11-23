@@ -90,8 +90,13 @@ CONFIGREADME
 
 echo "🔧 Creating systemd files..."
 
+# Get current user info
+CURRENT_USER="${USER:-$(whoami)}"
+CURRENT_GROUP="${CURRENT_USER}"
+USER_HOME="${HOME:-/home/$CURRENT_USER}"
+
 # systemd/git-sync.service
-cat > systemd/git-sync.service << 'SERVICEEOF'
+cat > systemd/git-sync.service << SERVICEEOF
 [Unit]
 Description=Git Repository Sync Service
 After=network-online.target
@@ -100,9 +105,9 @@ Documentation=https://github.com/jenishjain/git-sync
 
 [Service]
 Type=oneshot
-User=jenishjain
-Group=jenishjain
-WorkingDirectory=/home/jenishjain
+User=${CURRENT_USER}
+Group=${CURRENT_GROUP}
+WorkingDirectory=${USER_HOME}
 
 # Load environment variables (GitHub token)
 EnvironmentFile=/etc/systemd/system/git-sync.env
@@ -120,7 +125,7 @@ PrivateTmp=yes
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/jenishjain/sync-workspace /home/jenishjain/repositories /home/jenishjain/git-sync.log
+ReadWritePaths=${USER_HOME}/sync-workspace ${USER_HOME}/repositories ${USER_HOME}/git-sync.log
 
 # Resource limits
 TimeoutStartSec=600
