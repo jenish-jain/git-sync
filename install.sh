@@ -148,10 +148,12 @@ if [ "$START_SERVICE" = "y" ] || [ "$START_SERVICE" = "Y" ]; then
     echo "🚀 Starting service..."
     sudo systemctl enable git-sync.timer
     sudo systemctl start git-sync.timer
-    echo "✅ Service started and enabled"
+    echo "✅ Timer started and enabled (syncs every hour)"
     echo ""
-    echo "📊 Status:"
-    sudo systemctl status git-sync.timer --no-pager -l
+    echo "🔄 Running initial sync in background..."
+    sudo systemctl start --no-block git-sync.service
+    echo "   Check status with: sudo systemctl status git-sync.service"
+    echo "   View logs with: sudo journalctl -u git-sync.service -f"
 else
     echo "⚠️  Service not started"
     echo "   To start later, run:"
@@ -178,10 +180,13 @@ echo "   echo 'GITHUB_TOKEN=your_token' | sudo tee /etc/systemd/system/git-sync.
 echo "   sudo chmod 600 /etc/systemd/system/git-sync.env"
 echo ""
 echo "4. Test the sync:"
-echo "   sudo systemctl start git-sync.service"
+echo "   sudo systemctl start --no-block git-sync.service  # runs in background"
 echo ""
 echo "5. View logs:"
 echo "   sudo journalctl -u git-sync.service -f"
+echo ""
+echo "6. Check sync status:"
+echo "   sudo systemctl status git-sync.service"
 echo ""
 echo "📚 Full documentation:"
 echo "   $INSTALL_DIR/README.md"

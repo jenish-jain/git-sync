@@ -245,12 +245,18 @@ tail -f ~/git-sync.log
 ### Manual Sync
 
 ```bash
-# Trigger sync manually
+# Trigger sync in background (recommended - returns immediately)
+sudo systemctl start --no-block git-sync.service
+
+# Or run in foreground (waits until sync completes)
 sudo systemctl start git-sync.service
 
 # Test sync with direct command
 export GITHUB_TOKEN="your_token"
 python3 /opt/git-sync/sync.py
+
+# Check if sync is running
+sudo systemctl is-active git-sync.service
 ```
 
 ### Add New Repository
@@ -260,8 +266,10 @@ python3 /opt/git-sync/sync.py
 nano ~/sync-repos.json
 # Add: {"name": "new-repo"}
 
-# Trigger sync
-sudo systemctl start git-sync.service
+# Trigger sync in background
+sudo systemctl start --no-block git-sync.service
+
+# Or wait for next scheduled sync (within 1 hour)
 ```
 
 ### Clone from Your Raspberry Pi
