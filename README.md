@@ -1,6 +1,24 @@
 # Git Sync - Automatic GitHub to Raspberry Pi Sync
 
-Automatically sync your GitHub repositories to your Raspberry Pi as a local Git server with log rotation and automatic cleanup.
+Turn your Raspberry Pi into a private Git server that automatically mirrors your GitHub repositories.
+
+## What is This?
+
+Git Sync creates a **local Git server** on your Raspberry Pi that stays in sync with your GitHub repositories. Think of it as your personal GitHub backup that runs on your home network.
+
+**Why use it?**
+- 🔒 **Privacy**: Keep your code on hardware you own
+- 💾 **Backup**: Automatic protection against GitHub outages or account issues
+- ⚡ **Speed**: Clone/push to your local network (no internet needed)
+- 🏠 **Self-hosted**: Full control over your Git infrastructure
+- 💰 **Free**: No monthly fees, unlimited private repos
+
+**How it works:**
+1. Runs on your Raspberry Pi as a background service
+2. Syncs with GitHub every hour (configurable)
+3. Creates bare Git repositories you can clone from
+4. Bidirectional sync: changes on GitHub → Pi, changes on Pi → GitHub
+5. Automatic cleanup saves 50% disk space with log rotation
 
 ## 🚀 One-Line Install
 
@@ -8,320 +26,184 @@ Automatically sync your GitHub repositories to your Raspberry Pi as a local Git 
 curl -fsSL https://raw.githubusercontent.com/jenish-jain/git-sync/main/install.sh | bash
 ```
 
-This will download and set up everything automatically! Or follow the manual installation steps below.
+**That's it!** The installer will:
+- ✅ Install the sync script and configure systemd
+- ✅ Set up log rotation (7-day retention)
+- ✅ Prompt for your GitHub username and token
+- ✅ Start syncing automatically every hour
+- ✅ Create `~/repositories/` for your Git server
 
-## Features
+## Prerequisites
 
-- ✅ **Automatic bidirectional sync** between GitHub and your Raspberry Pi
-- ✅ **Log rotation** - Keeps logs for 7 days (configurable)
-- ✅ **Automatic workspace cleanup** - Saves 50% disk space
-- ✅ **Hourly synchronization** (customizable)
-- ✅ **Auto-creates bare repositories**
-- ✅ **Systemd integration** for reliable background operation
-- ✅ **Secure token management**
-- ✅ **Status monitoring dashboard**
+- Raspberry Pi with Raspbian/Raspberry Pi OS
+- Python 3 and Git (pre-installed on Pi OS)
+- GitHub Personal Access Token ([get one here](https://github.com/settings/tokens))
+  - Required scope: `repo` (full control of private repositories)
 
-## Disk Space Benefits
+## Quick Start
 
-### Before Cleanup
-```
-~/repositories/     2.5 GB  (bare repos)
-~/sync-workspace/   2.5 GB  (sync mirrors)
-Logs:               Growing indefinitely
-───────────────────────────
-Total:              ~5.0 GB
-```
+### 1. Configure Repositories
 
-### After Cleanup (This Version!)
-```
-~/repositories/     2.5 GB  (bare repos)
-~/sync-workspace/   0 MB    (auto-deleted after sync)
-Logs:               100 MB max (7-day rotation)
-───────────────────────────
-Total:              ~2.6 GB  💾 Saved ~2.4 GB!
-```
-
-## Quick Start (5 Minutes)
-
-### Prerequisites
-
-1. **Raspberry Pi** with Raspbian/Raspberry Pi OS
-2. **GitHub Personal Access Token** - Get it from: https://github.com/settings/tokens
-   - Token type: "Personal access token (classic)"
-   - Required scope: `repo` (full control of private repositories)
-3. **Python 3** (pre-installed on Raspberry Pi OS)
-4. **Git** (pre-installed on Raspberry Pi OS)
-
-### Installation
+After installation, edit `~/sync-repos.json` to add your repositories:
 
 ```bash
-# 1. Clone this repository
-git clone https://github.com/jenishjain/git-sync.git
-cd git-sync
-
-# 2. Copy the sync script to system location
-sudo mkdir -p /opt/git-sync
-sudo cp sync.py /opt/git-sync/
-sudo chmod +x /opt/git-sync/sync.py
-
-# 3. Update your GitHub username in the script
-sudo nano /opt/git-sync/sync.py
-# Change line 24: "github_username": "YOUR_GITHUB_USERNAME"
-
-# 4. Create repository configuration
 nano ~/sync-repos.json
 ```
 
-Add your repositories to `~/sync-repos.json`:
 ```json
 [
-  {"name": "repo1"},
-  {"name": "repo2"},
-  {"name": "your-repo-name"}
+  {"name": "my-project"},
+  {"name": "website"},
+  {"name": "scripts"}
 ]
 ```
 
-```bash
-# 5. Set up log rotation
-chmod +x setup-log-rotation.sh
-./setup-log-rotation.sh
-
-# 6. Create systemd service file
-sudo nano /etc/systemd/system/git-sync.service
-```
-
-Paste this configuration:
-```ini
-[Unit]
-Description=Git Sync Service
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-User=YOUR_USERNAME
-EnvironmentFile=/etc/systemd/system/git-sync.env
-ExecStart=/usr/bin/python3 /opt/git-sync/sync.py
-TimeoutStartSec=600
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Replace `YOUR_USERNAME` with your actual username.
+### 2. Verify It's Running
 
 ```bash
-# 7. Create systemd timer file
-sudo nano /etc/systemd/system/git-sync.timer
-```
-
-Paste this configuration:
-```ini
-[Unit]
-Description=Git Sync Timer
-Requires=git-sync.service
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=1h
-Unit=git-sync.service
-
-[Install]
-WantedBy=timers.target
-```
-
-```bash
-# 8. Create environment file for GitHub token
-sudo nano /etc/systemd/system/git-sync.env
-```
-
-Add your token:
-```
-GITHUB_TOKEN=your_github_token_here
-```
-
-```bash
-# 9. Secure the environment file
-sudo chmod 600 /etc/systemd/system/git-sync.env
-
-# 10. Test the sync manually
-export GITHUB_TOKEN="your_token_here"
-python3 /opt/git-sync/sync.py
-
-# 11. Enable and start the service
-sudo systemctl daemon-reload
-sudo systemctl enable git-sync.timer
-sudo systemctl start git-sync.timer
-
-# 12. Verify it's running
+# Check timer status (should show "active")
 sudo systemctl status git-sync.timer
+
+# View recent sync logs
+sudo journalctl -u git-sync.service -n 50
 ```
 
-Done! Your repositories will now sync automatically every hour.
+### 3. Clone from Your Pi
+
+Once synced, clone repositories from your Pi on any device on your network:
+
+```bash
+# From your laptop/desktop
+git clone pi@raspberrypi.local:repositories/my-project.git
+
+# Or using IP address
+git clone pi@192.168.1.100:repositories/my-project.git
+```
+
+**Pro tip:** Set up SSH config (`~/.ssh/config`) for easier access:
+```
+Host pi
+    HostName raspberrypi.local
+    User pi
+```
+
+Then simply: `git clone pi:repositories/my-project.git`
 
 ## What Gets Installed
 
-- **Script**: `/opt/git-sync/sync.py` - Main sync script
-- **Config**: `~/sync-repos.json` - List of repositories to sync
-- **Repos**: `~/repositories/` - Bare Git repositories (your Git server)
-- **Workspace**: `~/sync-workspace/` - Temporary sync workspace (auto-deleted)
-- **Service**: `/etc/systemd/system/git-sync.service` - Systemd service
-- **Timer**: `/etc/systemd/system/git-sync.timer` - Hourly timer
-- **Token**: `/etc/systemd/system/git-sync.env` - Secure GitHub token storage
-- **Logs**: `~/git-sync.log` - Application logs (7-day rotation)
+The one-line installer sets up:
+- **`/opt/git-sync/sync.py`** - Main sync script
+- **`~/sync-repos.json`** - Repository configuration
+- **`~/repositories/`** - Your Git server (bare repos)
+- **Systemd service + timer** - Runs sync every hour
+- **Log rotation** - Keeps logs for 7 days, max 100 MB
 
 ## Configuration
 
-### Main Configuration
-
-Edit `/opt/git-sync/sync.py`:
-
-```python
-CONFIG = {
-    "github_token": os.environ.get("GITHUB_TOKEN", ""),
-    "github_username": "YOUR_GITHUB_USERNAME",  # ⚠️ CHANGE THIS
-    "repos_config": os.path.expanduser("~/sync-repos.json"),
-    "work_dir": os.path.expanduser("~/sync-workspace"),
-    "bare_repos_dir": os.path.expanduser("~/repositories"),
-    "log_file": os.path.expanduser("~/git-sync.log"),
-    "cleanup_workspace": True,  # Auto-cleanup workspace (recommended)
-    "log_retention_days": 7     # Keep logs for 7 days
-}
-```
-
 ### Change Sync Frequency
 
-Edit `/etc/systemd/system/git-sync.timer`:
-
-```ini
-# Every hour (default)
-OnUnitActiveSec=1h
-
-# Every 30 minutes
-OnUnitActiveSec=30min
-
-# Every 6 hours
-OnUnitActiveSec=6h
-
-# Daily at 2 AM
-OnCalendar=*-*-* 02:00:00
-```
-
-Then reload:
 ```bash
+# Edit timer configuration
+sudo nano /etc/systemd/system/git-sync.timer
+
+# Change OnUnitActiveSec to:
+OnUnitActiveSec=30min  # Every 30 minutes
+OnUnitActiveSec=6h     # Every 6 hours
+OnCalendar=*-*-* 02:00:00  # Daily at 2 AM
+
+# Apply changes
 sudo systemctl daemon-reload
 sudo systemctl restart git-sync.timer
 ```
 
-### Disable Workspace Cleanup
-
-If you have plenty of disk space and want faster syncs:
+### Update GitHub Token
 
 ```bash
-sudo nano /opt/git-sync/sync.py
-# Change: "cleanup_workspace": False
+# Edit token file
+echo 'GITHUB_TOKEN=your_new_token' | sudo tee /etc/systemd/system/git-sync.env
+sudo chmod 600 /etc/systemd/system/git-sync.env
+
+# Restart service
 sudo systemctl restart git-sync.service
 ```
 
-## Daily Usage
+### Disable Workspace Cleanup (Optional)
 
-### Monitor Sync Status
+If you have lots of disk space and want faster syncs:
 
 ```bash
-# Check service status
-sudo systemctl status git-sync.service
-sudo systemctl status git-sync.timer
+sudo nano /opt/git-sync/sync.py
+# Change line 29: "cleanup_workspace": False
 
-# View recent logs
+sudo systemctl restart git-sync.service
+```
+
+## Common Commands
+
+### Manual Sync
+
+```bash
+# Trigger sync now (runs in background)
+sudo systemctl start --no-block git-sync.service
+
+# Check if sync is currently running
+sudo systemctl is-active git-sync.service
+```
+
+### View Logs
+
+```bash
+# Recent logs
 sudo journalctl -u git-sync.service -n 50
 
 # Follow logs in real-time
 sudo journalctl -u git-sync.service -f
 
-# View application log
+# Application log
 tail -f ~/git-sync.log
-```
-
-### Manual Sync
-
-```bash
-# Trigger sync in background (recommended - returns immediately)
-sudo systemctl start --no-block git-sync.service
-
-# Or run in foreground (waits until sync completes)
-sudo systemctl start git-sync.service
-
-# Test sync with direct command
-export GITHUB_TOKEN="your_token"
-python3 /opt/git-sync/sync.py
-
-# Check if sync is running
-sudo systemctl is-active git-sync.service
 ```
 
 ### Add New Repository
 
 ```bash
-# Edit config
+# 1. Edit config
 nano ~/sync-repos.json
 # Add: {"name": "new-repo"}
 
-# Trigger sync in background
+# 2. Trigger sync
 sudo systemctl start --no-block git-sync.service
-
-# Or wait for next scheduled sync (within 1 hour)
 ```
 
-### Clone from Your Raspberry Pi
-
-Once synced, you can clone from your Pi over your local network:
+### Service Control
 
 ```bash
-# From another computer on your network
-git clone username@raspberry-pi-ip:repositories/repo-name.git
+# Stop syncing
+sudo systemctl stop git-sync.timer
 
-# Example
-git clone pi@192.168.1.100:repositories/my-project.git
+# Start syncing
+sudo systemctl start git-sync.timer
+
+# Check status
+sudo systemctl status git-sync.timer
 ```
 
-Set up SSH config for easier access (`~/.ssh/config`):
-```
-Host raspberrypi
-    HostName 192.168.1.100
-    User pi
-    IdentityFile ~/.ssh/id_ed25519
-```
-
-Then simply:
-```bash
-git clone raspberrypi:repositories/my-project.git
-```
-
-## Monitoring & Maintenance
+## Monitoring
 
 ### Check Disk Usage
 
 ```bash
-# Check repository storage
+# Repository storage
 du -sh ~/repositories/
 
-# Check if workspace exists (should not exist after cleanup)
-ls ~/sync-workspace/ 2>&1
-
-# Check log size
-du -sh ~/git-sync.log
+# Log size
 sudo journalctl --disk-usage
 ```
 
-### Clean Logs Manually
+### Clean Old Logs
 
 ```bash
-# Clean systemd journal
+# Clean systemd journal (automatic, but can run manually)
 sudo journalctl --vacuum-time=7d
-sudo journalctl --vacuum-size=100M
-
-# Truncate application log
-> ~/git-sync.log
 ```
 
 ## Troubleshooting
@@ -329,147 +211,58 @@ sudo journalctl --vacuum-size=100M
 ### Service Not Running
 
 ```bash
-# Check status
-sudo systemctl status git-sync.service
 sudo systemctl status git-sync.timer
-
-# View recent errors
 sudo journalctl -u git-sync.service -n 50
-
-# Check if timer is active
-sudo systemctl list-timers | grep git-sync
 ```
 
 ### Authentication Failed
 
 ```bash
-# Verify token
-sudo cat /etc/systemd/system/git-sync.env
-
-# Update token
-sudo nano /etc/systemd/system/git-sync.env
-# Update: GITHUB_TOKEN=your_new_token
-
-# Restart service
+# Update GitHub token
+echo 'GITHUB_TOKEN=your_new_token' | sudo tee /etc/systemd/system/git-sync.env
+sudo chmod 600 /etc/systemd/system/git-sync.env
 sudo systemctl restart git-sync.service
 ```
 
 ### Permission Errors
 
 ```bash
-# Fix permissions
 sudo chown -R $USER:$USER ~/repositories
-sudo chown -R $USER:$USER ~/sync-workspace
-sudo chmod 755 ~/repositories
-```
-
-### Sync Taking Too Long
-
-```bash
-# Increase timeout in service file
-sudo nano /etc/systemd/system/git-sync.service
-# Change: TimeoutStartSec=1200  # 20 minutes
-
-sudo systemctl daemon-reload
-sudo systemctl restart git-sync.service
-```
-
-### Workspace Not Being Deleted
-
-```bash
-# Check cleanup logs
-sudo journalctl -u git-sync.service | grep -i cleanup
-
-# Should see:
-# "Cleaning up sync workspace..."
-# "✓ Cleaned up workspace (freed X MB)"
-
-# Manual cleanup
-rm -rf ~/sync-workspace/
 ```
 
 ### Out of Disk Space
 
 ```bash
-# Emergency cleanup
+# Remove workspace manually
 rm -rf ~/sync-workspace/
-sudo journalctl --vacuum-size=50M
-> ~/git-sync.log
 
-# Check space
-df -h
-du -sh ~/repositories/
+# Clean old logs
+sudo journalctl --vacuum-size=50M
 ```
 
 ## How It Works
 
-### Sync Workflow
+Each sync cycle:
+1. Creates temporary mirror repos in `~/sync-workspace/`
+2. Fetches changes from GitHub and local repos
+3. Pushes changes bidirectionally (GitHub ↔ Pi)
+4. Deletes `~/sync-workspace/` to save disk space
+5. Repeats every hour
 
-1. **Clone/Update**: Script creates bare mirror repositories in `~/sync-workspace/`
-2. **Fetch**: Fetches latest changes from both GitHub and local repositories
-3. **Sync**: Pushes changes bidirectionally (GitHub ↔ Local)
-4. **Cleanup**: Deletes `~/sync-workspace/` to save disk space
-5. **Repeat**: Runs again on next timer trigger (hourly by default)
+**Disk space:** ~2.5 GB (only bare repos kept, workspace deleted)
+**Sync time:** 30 seconds - 2 minutes (first sync takes longer)
+**Logs:** Auto-rotated, 7-day retention, 100 MB max
 
-### Repository Types
-
-- **Bare repositories** (`~/repositories/*.git`): Permanent storage, no working tree
-- **Mirror repositories** (`~/sync-workspace/*`): Temporary, used for syncing only
-
-### Log Rotation
-
-- **Application logs**: Rotated based on age (7 days by default)
-- **Systemd journal**: Limited to 100 MB with 7-day retention
-- **Automatic**: Happens on every sync run
-
-## Performance
-
-### First Sync After Cleanup
-- **Time**: 2-30 minutes (needs to re-clone from GitHub)
-- **Trade-off**: Worth it for 50% disk space savings
-
-### Subsequent Syncs
-- **Time**: 30 seconds - 2 minutes (only fetches new changes)
-- **Frequency**: Every hour (default)
-
-## Security
-
-- GitHub token stored in secured file (`/etc/systemd/system/git-sync.env`)
-- Service runs as your user (not root)
-- SSH key authentication supported for cloning from Pi
-- No passwords stored in plain text
-
-## Use Cases
-
-- **Backup**: Automatic GitHub backup to your Raspberry Pi
-- **Redundancy**: Protection against GitHub outages
-- **Local Development**: Fast local Git server on your network
-- **Learning**: Understand Git server operations
-- **Privacy**: Keep copies of your code locally
-- **Offline Access**: Access your repositories even without internet
-
-## Advanced Usage
+## Advanced
 
 ### Auto-Generate Repository List
 
 ```bash
-# Install and run the config generator (requires GitHub token)
 export GITHUB_TOKEN="your_token"
-python3 generate-git-sync-project.sh
+bash generate-git-sync-project.sh
 ```
 
-This will create `~/sync-repos.json` with all your non-forked, non-archived repositories.
-
-### Multiple GitHub Accounts
-
-Create separate service instances with different usernames and tokens:
-
-```bash
-# Copy and modify for second account
-sudo cp /etc/systemd/system/git-sync.service /etc/systemd/system/git-sync2.service
-sudo cp /etc/systemd/system/git-sync.timer /etc/systemd/system/git-sync2.timer
-# Edit files to use different config paths and environment files
-```
+This creates `~/sync-repos.json` with all your GitHub repos (excludes forks and archived).
 
 ## Support
 
