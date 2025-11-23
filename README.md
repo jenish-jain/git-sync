@@ -23,7 +23,7 @@ Git Sync creates a **local Git server** on your Raspberry Pi that stays in sync 
 ## 🚀 One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jenish-jain/git-sync/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jenish-jain/git-sync/master/install.sh | bash
 ```
 
 **That's it!** The installer will:
